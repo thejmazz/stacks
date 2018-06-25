@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  web:
+    image: emilevauge/whoami
+    networks:
+      - traefik_net
+    hostname: "{{.Service.Name}}-{{.Task.Slot}}-{{.Node.Hostname}}"
+    deploy:
+      mode: global
+      # placement:
+      #   constraints:
+      #   - "node.role==worker"
+      labels:
+        - "traefik.port=80"
+        - "traefik.docker.network=traefik_net"
+        - "traefik.frontend.rule=Host:whoami.${TRAEFIK_IP}.xip.io"
+
+networks:
+  traefik_net:
+    external: true

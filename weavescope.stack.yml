@@ -1,0 +1,45 @@
+version: '3.5'
+
+services:
+  app:
+    image: weaveworks/scope
+    command:
+      - /home/weave/scope
+      - --mode=app
+    networks:
+      - traefik_net
+    ports:
+      - target: 4040
+        published: 4040
+        mode: host
+        protocol: tcp
+    deploy:
+      mode: replicated
+      placement:
+        constraints:
+          - "node.hostname==swarm-manager-02"
+      replicas: 1
+      labels:
+        - "traefik.port=4040"
+        - "traefik.docker.network=traefik_net"
+
+  probe-launcher:
+    image: weaveworks/scope-swarm-launcher
+    command:
+      - /bin/sh
+      - -c
+      - |
+        scope launch --mode=probe --probe-only --probe.docker.bridge=docker0 --probe.docker=true $SWARM_MANAGER_2_PRIVATE_IP:4040
+        docker logs --follow weavescope
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+
+  # since it launches a standalone container on each host, to clean up you need to:
+  # (use case for having terraform output an ansible inventory)
+  # docker stop $(docker ps -a | grep weavescope | awk '{print $1}') && docker rm $(docker ps -a | grep weavescope | awk '{print $1}')
+
+networks:
+  traefik_net:
+    external: true

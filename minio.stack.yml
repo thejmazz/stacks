@@ -1,0 +1,137 @@
+version: '3.5'
+
+services:
+  minio-1:
+    image: minio/minio
+    volumes:
+      - minio-1-data:/export
+    # ports:
+    #   - "9001:9000"
+    networks:
+      - minio_distributed
+    secrets:
+      - source: minio_access_key
+        target: access_key
+      - source: minio_secret_key
+        target: secret_key
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==swarm-worker-01"
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio-1/export http://minio-2/export http://minio-3/export http://minio-4/export
+
+  minio-2:
+    image: minio/minio
+    volumes:
+      - minio-2-data:/export
+    # ports:
+    #   - "9002:9000"
+    networks:
+      - minio_distributed
+    secrets:
+      - source: minio_access_key
+        target: access_key
+      - source: minio_secret_key
+        target: secret_key
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==swarm-worker-02"
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio-1/export http://minio-2/export http://minio-3/export http://minio-4/export
+
+  minio-3:
+    image: minio/minio
+    volumes:
+      - minio-3-data:/export
+    # ports:
+    #   - "9003:9000"
+    networks:
+      - minio_distributed
+    secrets:
+      - source: minio_access_key
+        target: access_key
+      - source: minio_secret_key
+        target: secret_key
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==swarm-worker-03"
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio-1/export http://minio-2/export http://minio-3/export http://minio-4/export
+
+  minio-4:
+    image: minio/minio
+    volumes:
+      - minio-4-data:/export
+    # ports:
+    #   - "9004:9000"
+    networks:
+      - minio_distributed
+    secrets:
+      - source: minio_access_key
+        target: access_key
+      - source: minio_secret_key
+        target: secret_key
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==swarm-worker-04"
+      restart_policy:
+        delay: 10s
+        max_attempts: 10
+        window: 60s
+    command: server http://minio-1/export http://minio-2/export http://minio-3/export http://minio-4/export
+
+  nginx:
+    image: nginx
+    networks:
+      - minio_distributed
+      - traefik_net
+    configs:
+      - source: nginx_conf_2
+        target: /etc/nginx/nginx.conf
+    deploy:
+      placement:
+        constraints:
+          - "node.role==worker"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik_net"
+        - "traefik.port=80"
+
+volumes:
+  minio-1-data:
+    driver: local
+  minio-2-data:
+    driver: local
+  minio-3-data:
+    driver: local
+  minio-4-data:
+    driver: local
+
+networks:
+  minio_distributed:
+    driver: overlay
+  traefik_net:
+    external: true
+
+configs:
+  nginx_conf_2:
+    file: ./minio.nginx.conf
+
+secrets:
+  minio_secret_key:
+    external: true
+  minio_access_key:
+    external: true

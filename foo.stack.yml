@@ -1,0 +1,23 @@
+version: '3.5'
+
+services:
+  redis:
+    image: redis
+    # ports:
+      # - 5000:6379
+      # - published: 5000
+      #   target: 6379
+      #   mode: ingress
+      #   protocol: tcp
+    volumes:
+      - redis-data:/data
+  client:
+    ports:
+      - 8080:8080
+    image: redis
+    command: tail -f /dev/null
+
+volumes:
+  redis-data:
+    driver: local
+

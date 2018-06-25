@@ -1,0 +1,40 @@
+version: '3.5'
+
+services:
+  api:
+    image: node:10
+    volumes:
+      - "api-src:/home/node/src"
+    working_dir: /home/node
+    command: tail -f /dev/null
+    # entrypoint:
+    #   - /bin/sh
+    #   - -c
+    #   - |
+    #     npm init -y > /dev/null 2>&1 && npm install --save \
+    #       express
+
+    #     echo "ready"
+    #     tail -f /dev/null
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==swarm-manager-01"
+
+  api-src-unison:
+    image: unison:2.51.2
+    volumes:
+      - "api-src:/unison"
+    ports:
+      - "5000:5000"
+    user: "1000:100"
+    working_dir: /root
+    command: unison -socket 5000
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==swarm-manager-01"
+
+volumes:
+  api-src:
+    driver: local
